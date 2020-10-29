@@ -1,6 +1,7 @@
 import sys
 import getopt
 from node import Node
+import time
 
 class FGK(object):
     def __init__(self):
@@ -76,6 +77,9 @@ class FGK(object):
             node = node.parent
 
     def encode(self, text):
+
+        t1 = time.time()
+        
         result = ''
 
         for s in text:
@@ -87,12 +91,17 @@ class FGK(object):
 
             self.insert(s)
 
-        return result
+        t2 = time.time()
+
+        return result, (t2-t1)
 
     def get_symbol_by_ascii(self, bin_str):
         return chr(int(bin_str, 2))
 
     def decode(self, text):
+        
+        t1 = time.time()
+
         result = ''
 
         symbol = self.get_symbol_by_ascii(text[:8])
@@ -116,12 +125,14 @@ class FGK(object):
 
             i += 1
 
-        return result
+        t2 = time.time()
+
+        return result, (t2-t1)
 
 
 def main(argv):
     try:
-        opts, args = getopt.getopt(argv, "e:d:")
+        opts, _ = getopt.getopt(argv, "e:d:")
     except getopt.GetoptError:
         sys.exit(2)
 
@@ -129,16 +140,33 @@ def main(argv):
     result = None
     for opt, arg in opts:
         if opt == '-e':
+            orig = 0
             with open(arg) as f:
                 text = f.read()
-            result = FGK().encode(text)
+                orig = len(text)
+            
+            result,exec_time = FGK().encode(text)
+
+            size_compressed = int((len(result)-1)/8)+1
+            size_original = orig*8
+            ratio = size_compressed/size_original*100
+            
+            with open("encoded.adaptivehuffman", "w") as dest:
+                dest.write(result)
+
+            print("[+] Compression finished in %.5f seconds"% exec_time )
+            print("[+] Compression ratio  %.1f"% ratio )
+
         elif opt == '-d':
             with open(arg) as f:
                 text = f.read()
-            result = FGK().decode(text)
 
-    print result
+            result,exec_time = FGK().decode(text)
 
+            with open("decoded.adaptivehuffman", "w") as dest:
+                dest.write(result)
+            
+            print("[+] Decompression finished in %.5f seconds"% exec_time )
 
 if __name__ == '__main__':
     main(sys.argv[1:])
