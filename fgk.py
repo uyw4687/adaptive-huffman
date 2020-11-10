@@ -9,7 +9,7 @@ class FGK(object):
         self.NYT = Node(symbol="NYT")
         self.root = self.NYT
         self.nodes = []
-        self.seen = [None] * 256
+        self.seen = [None] * (2**24)
 
     def get_code(self, s, node, code=''):
         if node.left is None and node.right is None:
@@ -82,6 +82,8 @@ class FGK(object):
         
         result = ''
 
+        print(len(text))
+        a=0
         for s in text:
             if self.seen[ord(s)]:
                 result += self.get_code(s, self.root)
@@ -90,6 +92,11 @@ class FGK(object):
                 result += bin(ord(s))[2:].zfill(8)
 
             self.insert(s)
+
+            a+=1
+            if a%100000==0:
+                print(a)
+
 
         t2 = time.time()
 
@@ -110,6 +117,7 @@ class FGK(object):
         node = self.root
 
         i = 8
+        print(len(text))
         while i < len(text):
             node = node.left if text[i] == '0' else node.right
             symbol = node.symbol
@@ -141,7 +149,7 @@ def main(argv):
     for opt, arg in opts:
         if opt == '-e':
             orig = 0
-            with open(arg) as f:
+            with open(arg,encoding='latin-1') as f:
                 text = f.read()
                 orig = len(text)
             
@@ -151,7 +159,7 @@ def main(argv):
             size_original = orig*8
             ratio = size_compressed/size_original*100
             
-            with open("encoded.adaptivehuffman", "w") as dest:
+            with open(f"{arg}.adaptivehuffman", "w") as dest:
                 dest.write(result)
 
             print("[+] Compression finished in %.5f seconds"% exec_time )
@@ -163,7 +171,7 @@ def main(argv):
 
             result,exec_time = FGK().decode(text)
 
-            with open("decoded.adaptivehuffman", "w") as dest:
+            with open(f"{arg}decoded", "w",encoding='latin-1') as dest:
                 dest.write(result)
             
             print("[+] Decompression finished in %.5f seconds"% exec_time )
